@@ -51,7 +51,7 @@ export default class Register extends React.Component {
                         <WhiteSpace />
                         <InputItem placeholder='请输入密码' type="password" onChange={(val)=>{this.handleChange('password',val)}}>密&nbsp;&nbsp;&nbsp;码:</InputItem>
                         <WhiteSpace />
-                        <InputItem placeholder='请确认密码'type="password" onChange={(val)=>{this.handleChange('password2',val)}}>确认密码:</InputItem>
+                        <InputItem placeholder='请确认密码' type="password" onChange={(val)=>{this.handleChange('password2',val)}}>确认密码:</InputItem>
                         <WhiteSpace />
                         <List.Item>
                             <span>用户类型</span>
