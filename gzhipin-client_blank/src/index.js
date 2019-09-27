@@ -12,7 +12,7 @@ import Login from './containers/login/login'
 import Main from './containers/main/main'
 
 // 引入全局样式
-import './app.css'
+import './assets/css/index.less'
 
 ReactDOM.render((
     <Provider store={store}>
