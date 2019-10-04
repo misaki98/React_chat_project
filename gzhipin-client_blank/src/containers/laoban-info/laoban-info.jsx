@@ -11,8 +11,11 @@ import {
     Button,
 } from 'antd-mobile'
 import { connect } from 'react-redux'
+import {Redirect} from 'react-router-dom'
 
 import HeaderSelector from '../../components/header-selector/header-selector'
+
+import {updateUser} from '../../redux/actions'
 
 class LaobanInfo extends React.Component {
     constructor(props) {
@@ -39,10 +42,17 @@ class LaobanInfo extends React.Component {
     }
 
     save = () => {
-        console.log(this.state)
+        this.props.updateUser(this.state)
     }
 
     render() {
+        const {header, type} = this.props.user
+        if(header) {
+            // 代表信息已经完善了
+            const path = type === 'dashen' ? '/dashen' : '/laoban'
+            return <Redirect to={path} />
+        }
+        
         return <div>
             <NavBar>老板信息完善</NavBar>
             <HeaderSelector setHeader={this.setHeader}/>
@@ -68,7 +78,7 @@ class LaobanInfo extends React.Component {
 }
 
 export default connect(
-    state => ({}),
-    {} //在这里放action函数
+    state => ({user: state.user}),
+    {updateUser} //在这里放action函数
 )(LaobanInfo)
 

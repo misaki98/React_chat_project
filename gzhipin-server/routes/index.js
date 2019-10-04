@@ -2,12 +2,12 @@ var express = require('express');
 var router = express.Router();
 
 const md5 = require('blueimp-md5')
-const {UserModel} = require('../db/models')
+const { UserModel } = require('../db/models')
 
-const filter = {password: 0, __v: 0} //指定过滤的属性
+const filter = { password: 0, __v: 0 } //指定过滤的属性
 
 /* GET home page. */
-router.get('/', function(req, res, next) {
+router.get('/', function (req, res, next) {
   res.render('index', { title: 'Express' });
 });
 
@@ -35,36 +35,80 @@ router.get('/', function(req, res, next) {
 // })
 
 // 注册的路由
-router.post('/register', function(req, res){
-  const {username, password, type} = req.body
+router.post('/register', function (req, res) {
+  const { username, password, type } = req.body
   //  判断用户是否已经存在，根据username
-  UserModel.findOne({username}, function(err, user){
-    if(user){
+  UserModel.findOne({ username }, function (err, user) {
+    if (user) {
       // 如果存在，返回错误信息
-      res.send({code: 1, msg: '此用户已存在'})
+      res.send({ code: 1, msg: '此用户已存在' })
     } else {
       // 如果不存在，保存并返回包含user的json数据
-      new UserModel({username, type, password:md5(password)}).save(function(err, user){
-        res.cookie('userid', user._id, {maxAge: 1000*60*60*24*7}) //持久化cookie，保存在本地
-        res.send({code: 0, data:{username, type, _id: user._id}})
+      new UserModel({ username, type, password: md5(password) }).save(function (err, user) {
+        res.cookie('userid', user._id, { maxAge: 1000 * 60 * 60 * 24 * 7 }) //持久化cookie，保存在本地
+        res.send({ code: 0, data: { username, type, _id: user._id } })
       })
     }
   })
 })
 
 // 登录的路由
-router.post('/login', function(req, res) {
-  const {username, password} = req.body
+router.post('/login', function (req, res) {
+  const { username, password } = req.body
   // 根据用户名和密码查询users集合
-  UserModel.findOne({username, password:md5(password)}, filter, function(err, user){
-    if(user) {
+  UserModel.findOne({ username, password: md5(password) }, filter, function (err, user) {
+    if (user) {
       // 登录成功 1. 返回并保存cookie
-      res.cookie('userid', user._id, {maxAge: 1000*60*60*24*7}) //持久化cookie，保存在本地
-      res.send({code: 0, data:user})
+      res.cookie('userid', user._id, { maxAge: 1000 * 60 * 60 * 24 * 7 }) //持久化cookie，保存在本地
+      res.send({ code: 0, data: user })
     } else {
-      res.send({code: 1, msg: '用户名或密码不正确'})
+      res.send({ code: 1, msg: '用户名或密码不正确' })
     }
   })
 })
+
+// 更新用户信息的路由
+router.post('/update', function (req, res) {
+  // 先从请求的cookie中取到userid
+  const userid = req.cookies.userid
+  if (!userid) {
+    // 如果没有收到userid，直接结束
+    return res.send({
+      code: 1,
+      msg: '请先登录'
+    })
+  }
+  // 需要得到提交的用户数据,cookie在发请求的时候会自动携带过来
+  const user = req.body
+  UserModel.findByIdAndUpdate({_id: userid}, user, function(err, oldUser){
+
+    if(!oldUser){
+      // 说明数据库不存在这个用户，通知浏览器删除这个cookie
+      res.clearCookie('userid')
+      return res.send({code: 1, msg: '请先登录'})
+    }else{
+      const {_id, username, type} = oldUser
+      const data = Object.assign(user, {_id, username, type})
+      res.send({code: 0, data})
+    }
+  })
+
+})
+
+// 获取用户信息的路由（由cookie中获取）
+router.get('/user', function(req, res){
+  const userid = req.cookies.userid
+  if (!userid) {
+    // 如果没有收到userid，直接结束
+    return res.send({
+      code: 1,
+      msg: '请先登录'
+    })
+  }
+  UserModel.findOne({_id: userid}, filter, function(err, user){
+    res.send({code: 0, data: user})
+  })
+})
+
 
 module.exports = router;

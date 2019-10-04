@@ -3,7 +3,9 @@ import { combineReducers } from 'redux'
 
 import {
     AUTH_SUCCESS,
-    ERROR_MSG
+    ERROR_MSG,
+    RESET_USER,
+    RECEIVE_USER
 } from './action-types'
 
 import {getRedirectTo} from '../utils'
@@ -23,6 +25,10 @@ function user(state = initUser, action) {
             return { ...action.data, redirectTo: getRedirectTo(type, header) }
         case ERROR_MSG:  //data为msg
             return { ...state, msg: action.data }
+        case RECEIVE_USER:
+            return action.data
+        case RESET_USER:
+            return {...initUser, msg: action.data}
         default:
             return state
     }

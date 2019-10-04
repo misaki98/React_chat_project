@@ -20,7 +20,7 @@ export default class HeadSelector extends React.Component {
         }
     }
 
-    static PropTypes = {
+    static propTypes = {
         setHeader: PropTypes.func.isRequired
     }
 
