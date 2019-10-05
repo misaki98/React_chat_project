@@ -76,7 +76,7 @@ class Main extends React.Component {
             return <Redirect to='/login' />
         }
         const { user } = this.props
-        if (!user) {
+        if (!user._id) {
             return null
         } else {
             let path = this.props.location.pathname
@@ -95,15 +95,17 @@ class Main extends React.Component {
             if(user.type === 'laoban'){
                 // 隐藏第二个
                 this.navList[1].hide = true
+                this.navList[0].hide = ''
             }else{
                 // 隐藏第一个
                 this.navList[0].hide = true
+                this.navList[1].hide = ''
             }
         }
 
         return (
         <div>
-            {currentNav ? <NavBar>{currentNav.title}</NavBar> : null}
+            {currentNav ? <NavBar className="newnav-bar">{currentNav.title}</NavBar> : null}
             <Switch>
                 <Route path='/laobaninfo' component={LaobanInfo} />
                 <Route path='/dasheninfo' component={DashenInfo} />
