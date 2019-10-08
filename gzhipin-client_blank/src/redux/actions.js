@@ -4,15 +4,56 @@ import {
     ERROR_MSG,
     RECEIVE_USER,
     RESET_USER,
-    RESEIVE_USER_LIST
+    RESEIVE_USER_LIST,
+    RECEIVE_MSG_LIST,
+    RECEIVE_MSG
 } from './action-types'
 import {
     reqRegister,
     reqLogin,
     reqUpdateUser,
     reqUser,
-    reqUserList
+    reqUserList,
+    reqChatMsgList,
+    reqReadMsg
 } from '../api'
+import io from 'socket.io-client'
+
+/**
+ * 使用单例对象来保证多次调用函数返回的都是同一个IO实例
+ * 1. 创建对象之前：判断对象是否已经存在，没有才去创建
+ * 2. 创建对象之后：保存对象
+ */
+// 把链接IO封装成一个函数
+function initIO(dispatch, userid) {
+    if (!io.socket) {
+        //连 接 服 务 器 ,得 到 代 表 连 接 的 socket对 象
+        io.socket = io('ws://localhost:4000')
+        //绑 定 'receiveMessage' 的 监 听 ,来 接 收 服 务 器 发 送 的 消 息 
+        io.socket.on('receiveMsg', function (chatMsg) {
+            console.log('客户端端接收到消息:', chatMsg)
+            // 只有当chatMsg是与当前用户相关的时候才显示消息（分发同步action）
+            if(chatMsg.from === userid || userid === chatMsg.to){
+                dispatch(receiveMsg(chatMsg))
+            }
+        })
+
+    }
+}
+/**
+ * 将获取聊天消息列表封装为一个函数
+ * 在每次登陆成功后都需要发请求
+ */
+async function getMsgList(dispatch, userid) {
+    initIO(dispatch, userid)
+    const response = await reqChatMsgList()
+    const result = response.data
+    if (result.code === 0) {
+        const { users, chatMsg } = result.data
+        // 分发同步action
+        dispatch(receiveMsgList({ users, chatMsg }))
+    }
+}
 
 // 授权成功的同步action
 const authSuccess = (user) => ({ type: AUTH_SUCCESS, data: user })
@@ -23,7 +64,12 @@ const receiveUser = (user) => ({ type: RECEIVE_USER, data: user })
 // 重置用户的同步的action
 export const resetUser = (msg) => ({ type: RESET_USER, data: msg })
 // 接收用户列表的同步action
-export const receiveUserList = (userlist) => ({ type: RESEIVE_USER_LIST, data: userlist})
+const receiveUserList = (userlist) => ({ type: RESEIVE_USER_LIST, data: userlist })
+// 接收消息列表的同步action
+const receiveMsgList = ({ users, chatMsg }) => ({ type: RECEIVE_MSG_LIST, data: { users, chatMsg } })
+// 接收一个消息的同步action
+const receiveMsg = (chatMsg) => ({type:RECEIVE_MSG, data: chatMsg})
+
 
 // 注册异步action
 export const register = (user) => {
@@ -44,6 +90,7 @@ export const register = (user) => {
         const response = await reqRegister({ username, password, type })
         const result = response.data
         if (result.code === 0) {
+            getMsgList(dispatch, result.data._id)
             // 分发成功的action
             dispatch(authSuccess(result.data))
         } else {
@@ -67,6 +114,7 @@ export const login = (user) => {
         const response = await reqLogin(user)
         const result = response.data
         if (result.code === 0) {
+            getMsgList(dispatch, result.data._id)
             // 分发成功的action
             dispatch(authSuccess(result.data))
         } else {
@@ -96,10 +144,11 @@ export const getUser = () => {
     return async dispatch => {
         const response = await reqUser()
         const result = response.data
-        if(result.code === 0){
+        if (result.code === 0) {
+            getMsgList(dispatch, result.data._id)
             // 成功获取数据
             dispatch(receiveUser(result.data))
-        }else{
+        } else {
             dispatch(resetUser(result.msg))
         }
     }
@@ -110,8 +159,16 @@ export const getUserList = (type) => {
     return async dispatch => {
         const response = await reqUserList(type)
         const result = response.data
-        if(result.code === 0){
+        if (result.code === 0) {
             dispatch(receiveUserList(result.data))
         }
+    }
+}
+
+// 发送消息得分异步action
+export const sendMsg = ({ from, to, content }) => {
+    return dispatch => {
+        console.log('客户端向服务器发送消息', { from, to, content })
+        io.socket.emit('sendMsg', { from, to, content })
     }
 }

@@ -14,6 +14,8 @@ import Main from './containers/main/main'
 // 引入全局样式
 import './assets/css/index.less'
 
+//import './test/socketio_test'
+
 ReactDOM.render((
     <Provider store={store}>
         <HashRouter>

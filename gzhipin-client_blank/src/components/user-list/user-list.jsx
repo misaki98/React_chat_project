@@ -4,8 +4,9 @@
 import React from 'react'
 import PropTypes from 'prop-types'
 import { WingBlank, WhiteSpace, Card } from 'antd-mobile'
+import {withRouter} from 'react-router-dom'
 
-export default class UserList extends React.Component {
+class UserList extends React.Component {
     constructor(props) {
         super(props)
         this.state = {}
@@ -22,7 +23,7 @@ export default class UserList extends React.Component {
                     this.props.userlist.map(user => (
                         <div key={user._id}>
                             <WhiteSpace />
-                            <Card>
+                            <Card onClick={()=> this.props.history.push(`/chat/${user._id}`)}>
                                 <Card.Header thumb={require(`../../assets/images/${user.header? user.header : '头像1'}.png`)} extra={user.username}></Card.Header>
                                 <Card.Body>
                                     <div>职位：{user.post}</div>
@@ -38,3 +39,5 @@ export default class UserList extends React.Component {
         )
     }
 }
+
+export default withRouter(UserList)

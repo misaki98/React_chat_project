@@ -12,6 +12,8 @@ import Message from '../message/message'
 import Personal from '../personal/personal'
 import NotFound from '../../components/not-found/not-found'
 import NavFooter from '../../components/nav-footer/nav-footer'
+import Chat from '../../containers/chat/chat'
+
 
 import { getRedirectTo } from '../../utils/index'
 import { getUser } from '../../redux/actions'
@@ -110,6 +112,7 @@ class Main extends React.Component {
                 <Route path='/laobaninfo' component={LaobanInfo} />
                 <Route path='/dasheninfo' component={DashenInfo} />
                 {this.navList.map(item=><Route path={item.path} component={item.component} key={item}/>)}
+                <Route path='/chat/:userid' component={Chat}  />
                 <Route component={NotFound} />
             </Switch>
             {currentNav ? <NavFooter navList={this.navList}></NavFooter> : null}
