@@ -1,6 +1,6 @@
 import React from 'react'
 import { connect } from 'react-redux'
-import { NavBar, List, InputItem } from 'antd-mobile'
+import { NavBar, List, InputItem, Grid, Icon } from 'antd-mobile'
 import { sendMsg } from '../../redux/actions'
 const Item = List.Item
 
@@ -8,10 +8,32 @@ class Chat extends React.Component {
     constructor(props) {
         super(props)
         this.state = {
-            content: ''
+            content: '',
+            isShow: false  //是否显示表情列表
         }
     }
+    // 在组件第一次render之前回调
+    componentWillMount() {
+        // 初始化表情列表数据
+        const emojis = ['😃', '😀', '🤣', '🙃', '😃', '😀', '🤣', '🙃', '😃', '😀', '🤣', '🙃', '😃', '😀', '🤣', '🙃',
+            '😃', '😀', '🤣', '🙃', '😃', '😀', '🤣', '🙃', '😃', '😀', '🤣', '🙃', '😃', '😀', '🤣', '🙃',
+            '😃', '😀', '🤣', '🙃', '😃', '😀', '🤣', '🙃', '😃', '😀', '🤣', '🙃', '😃', '😀', '🤣', '🙃',
+            '😃', '😀', '🤣', '🙃', '😃', '😀', '🤣', '🙃', '😃', '😀', '🤣', '🙃', '😃', '😀', '🤣', '🙃'
+        ]
+        this.emojis = emojis.map(item => ({ text: item }))
+    }
 
+    componentDidMount(){
+        // 初始化显示列表
+        window.scrollTo(0, document.body.scrollHeight)
+    }
+
+    componentDidUpdate(){
+        // 初始化显示列表
+        window.scrollTo(0, document.body.scrollHeight)
+    }
+
+    
     handleSend = () => {
         const from = this.props.user._id
         const to = this.props.match.params.userid
@@ -22,16 +44,25 @@ class Chat extends React.Component {
         }
         // 清除输入的数据
         this.setState({
-            content: ''
+            content: '',
+            isShow: false
         })
     }
+
+    toggleShow = () => {
+        this.setState({ isShow: !this.state.isShow })
+        if (!this.state.isShow) {
+            // 异步手动派发一个resize事件
+            setTimeout(() => { window.dispatchEvent(new Event('resize')) }, 0)
+        }
+    }
     render() {
-        const {user} = this.props
-        const {users, chatMsg} = this.props.chat
+        const { user } = this.props
+        const { users, chatMsg } = this.props.chat
 
         // 计算当前聊天的ID
         const meId = user._id
-        if(!users[meId]){
+        if (!users[meId]) {
             return null
         }
         const targetId = this.props.match.params.userid
@@ -43,13 +74,16 @@ class Chat extends React.Component {
         const targetIcon = header ? require(`../../assets/images/${header}.png`) : null
         return (
             <div id='chat-page'>
-                <NavBar>{users[targetId].username}</NavBar>
-                <List>
+                <NavBar icon={<Icon type='left' />}
+                    className='newnav-bar'
+                    onLeftClick={()=>this.props.history.goBack()}
+                >{users[targetId].username}</NavBar>
+                <List style={{ margin: '50px 0' }}>
                     {
-                        msgs.map(msg =>{
-                            if(msg.to === meId){ //别人发给我的消息
+                        msgs.map(msg => {
+                            if (msg.to === meId) { //别人发给我的消息
                                 return <Item key={msg._id} thumb={targetIcon}>{msg.content}</Item>
-                            }else{ //我发的消息
+                            } else { //我发的消息
                                 return <Item key={msg._id} className='chat-me' extra='我'>{msg.content}</Item>
                             }
                         })
@@ -57,15 +91,31 @@ class Chat extends React.Component {
                 </List>
                 <div className='am-tab-bar'>
                     <InputItem placeholder="请输入"
+                        onFocus={() => this.setState({ isShow: false })}
                         value={this.state.content}
                         onChange={val => this.setState({ content: val })}
-                        extra={<span onClick={this.handleSend}>发送</span>} />
+                        extra={
+                            <span>
+                                <span style={{ marginRight: '5px' }} onClick={this.toggleShow}>😀</span>
+                                <span onClick={this.handleSend}>发送</span>
+                            </span>
+                        } />
+                    {
+                        this.state.isShow ? (<Grid data={this.emojis}
+                            columnNum={8}
+                            carouselMaxRow={4}
+                            isCarousel={true} //是否有轮播效果
+                            onClick={(item) => {
+                                this.setState({ content: this.state.content + item.text }
+                                )
+                            }} />) : null
+                    }
                 </div>
             </div>
         )
     }
 }
 export default connect(
-    state => ({user: state.user, chat: state.chat}),
+    state => ({ user: state.user, chat: state.chat }),
     { sendMsg }
 )(Chat)
