@@ -151,7 +151,7 @@ router.post('/readmsg', function (req, res) {
   // 得到请求中的from和to
   const from = req.body.from
   // 只能改别人发给自己的
-  const to = req.body.userid
+  const to = req.cookies.userid
   /**
    * 获取到后就去数据库更新对应数据
    * 参数1：查询条件

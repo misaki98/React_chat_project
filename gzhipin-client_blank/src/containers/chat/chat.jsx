@@ -1,7 +1,8 @@
 import React from 'react'
 import { connect } from 'react-redux'
 import { NavBar, List, InputItem, Grid, Icon } from 'antd-mobile'
-import { sendMsg } from '../../redux/actions'
+import QueueAnim from 'rc-queue-anim'
+import { sendMsg, readMsg } from '../../redux/actions'
 const Item = List.Item
 
 class Chat extends React.Component {
@@ -23,17 +24,26 @@ class Chat extends React.Component {
         this.emojis = emojis.map(item => ({ text: item }))
     }
 
-    componentDidMount(){
+    componentDidMount() {
+        // 初始化显示列表
+        window.scrollTo(0, document.body.scrollHeight)
+        // 在这里向后台发请求更新未读消息的数量
+        const targetId = this.props.match.params.userid
+        const userid = this.props.user._id
+        this.props.readMsg(targetId, userid)
+    }
+
+    componentDidUpdate() {
         // 初始化显示列表
         window.scrollTo(0, document.body.scrollHeight)
     }
-
-    componentDidUpdate(){
-        // 初始化显示列表
-        window.scrollTo(0, document.body.scrollHeight)
+    componentWillUnmount() {
+        const targetId = this.props.match.params.userid
+        const userid = this.props.user._id
+        this.props.readMsg(targetId, userid)
     }
 
-    
+
     handleSend = () => {
         const from = this.props.user._id
         const to = this.props.match.params.userid
@@ -76,18 +86,21 @@ class Chat extends React.Component {
             <div id='chat-page'>
                 <NavBar icon={<Icon type='left' />}
                     className='newnav-bar'
-                    onLeftClick={()=>this.props.history.goBack()}
+                    onLeftClick={() => this.props.history.goBack()}
                 >{users[targetId].username}</NavBar>
                 <List style={{ margin: '50px 0' }}>
-                    {
-                        msgs.map(msg => {
-                            if (msg.to === meId) { //别人发给我的消息
-                                return <Item key={msg._id} thumb={targetIcon}>{msg.content}</Item>
-                            } else { //我发的消息
-                                return <Item key={msg._id} className='chat-me' extra='我'>{msg.content}</Item>
-                            }
-                        })
-                    }
+                    <QueueAnim type='left' >
+                        {
+                            msgs.map(msg => {
+                                if (msg.to === meId) { //别人发给我的消息
+                                    return <Item key={msg._id} thumb={targetIcon}>{msg.content}</Item>
+                                } else { //我发的消息
+                                    return <Item key={msg._id} className='chat-me' extra='我'>{msg.content}</Item>
+                                }
+                            })
+                        }
+                    </QueueAnim>
+
                 </List>
                 <div className='am-tab-bar'>
                     <InputItem placeholder="请输入"
@@ -117,5 +130,5 @@ class Chat extends React.Component {
 }
 export default connect(
     state => ({ user: state.user, chat: state.chat }),
-    { sendMsg }
+    { sendMsg, readMsg }
 )(Chat)

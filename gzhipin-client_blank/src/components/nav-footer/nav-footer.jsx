@@ -12,10 +12,11 @@ class NavFooter extends React.Component {
         this.state = {}
     }
     static propTypes = {
-        navList: PropTypes.array.isRequired
+        navList: PropTypes.array.isRequired,
+        unReadCount: PropTypes.number.isRequired
     }
     render() {
-        let { navList } = this.props
+        let { navList, unReadCount } = this.props
         // 对数组进行过滤，过滤掉hide为true的项目
         navList = navList.filter(item => !item.hide)
         const pathname = this.props.location.pathname
@@ -24,6 +25,7 @@ class NavFooter extends React.Component {
                 {navList.map((item, index) => (
                     <TabBar.Item 
                         key={item.path} 
+                        badge={item.path === '/message' ? unReadCount : 0}
                         title={item.text} 
                         icon={{uri: require(`./images/${item.icon}.png`)}}
                         selectedIcon={{uri: require(`./images/${item.icon}-selected.png`)}}

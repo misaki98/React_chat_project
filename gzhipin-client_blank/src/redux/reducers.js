@@ -8,7 +8,8 @@ import {
     RECEIVE_USER,
     RESEIVE_USER_LIST,
     RECEIVE_MSG_LIST,
-    RECEIVE_MSG
+    RECEIVE_MSG,
+    MSG_READ
 } from './action-types'
 
 import { getRedirectTo } from '../utils'
@@ -57,18 +58,32 @@ const initChat = {
 function chat(state = initChat, action) {
     switch (action.type) {
         case RECEIVE_MSG_LIST: //data:{users,chatMsg}
-            const {users, chatMsg} = action.data
+            const { users, chatMsg, userid } = action.data
             return {
                 users,
                 chatMsg,
-                unReadCount:0
+                unReadCount: chatMsg.reduce((preTotal, msg) => preTotal + (!msg.read && msg.to === userid ? 1 : 0), 0)
             }
         case RECEIVE_MSG:
-            const ChatMsg = action.data
+            const _ChatMsg = action.data.chatMsg
+            console.log(state,_ChatMsg)
             return {
                 users: state.users,
-                chatMsg: [...state.chatMsg, ChatMsg], //先保留原数组所有元素，在加上本次的元素
-                unReadCount: 0
+                chatMsg: [...state.chatMsg, _ChatMsg], //先保留原数组所有元素，在加上本次的元素
+                unReadCount: state.unReadCount + (!_ChatMsg.read && _ChatMsg.to === action.data.userid ? 1 : 0)
+            }
+        case MSG_READ:
+            const {from, to, count} = action.data
+            return {
+                users: state.users,
+                chatMsg: state.chatMsg.map(msg => {
+                    if(msg.to === to && msg.from === from && !msg.read){
+                        return {...msg, read: true}
+                    }else {
+                        return msg
+                    }
+                }) ,
+                unReadCount: state.unReadCount - count
             }
         default:
             return state

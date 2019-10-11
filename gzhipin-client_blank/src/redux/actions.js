@@ -6,7 +6,8 @@ import {
     RESET_USER,
     RESEIVE_USER_LIST,
     RECEIVE_MSG_LIST,
-    RECEIVE_MSG
+    RECEIVE_MSG,
+    MSG_READ
 } from './action-types'
 import {
     reqRegister,
@@ -33,8 +34,8 @@ function initIO(dispatch, userid) {
         io.socket.on('receiveMsg', function (chatMsg) {
             console.log('客户端端接收到消息:', chatMsg)
             // 只有当chatMsg是与当前用户相关的时候才显示消息（分发同步action）
-            if(chatMsg.from === userid || userid === chatMsg.to){
-                dispatch(receiveMsg(chatMsg))
+            if (chatMsg.from === userid || userid === chatMsg.to) {
+                dispatch(receiveMsg(chatMsg, userid))
             }
         })
 
@@ -51,7 +52,7 @@ async function getMsgList(dispatch, userid) {
     if (result.code === 0) {
         const { users, chatMsg } = result.data
         // 分发同步action
-        dispatch(receiveMsgList({ users, chatMsg }))
+        dispatch(receiveMsgList({ users, chatMsg, userid }))
     }
 }
 
@@ -66,9 +67,11 @@ export const resetUser = (msg) => ({ type: RESET_USER, data: msg })
 // 接收用户列表的同步action
 const receiveUserList = (userlist) => ({ type: RESEIVE_USER_LIST, data: userlist })
 // 接收消息列表的同步action
-const receiveMsgList = ({ users, chatMsg }) => ({ type: RECEIVE_MSG_LIST, data: { users, chatMsg } })
+const receiveMsgList = ({ users, chatMsg, userid }) => ({ type: RECEIVE_MSG_LIST, data: { users, chatMsg, userid } })
 // 接收一个消息的同步action
-const receiveMsg = (chatMsg) => ({type:RECEIVE_MSG, data: chatMsg})
+const receiveMsg = (chatMsg, userid) => ({ type: RECEIVE_MSG, data: { chatMsg, userid } })
+// 查看消息的同步action
+const msgRead = ({ count, from, to }) => ({ type: MSG_READ, data: { count, from, to } })
 
 
 // 注册异步action
@@ -170,5 +173,17 @@ export const sendMsg = ({ from, to, content }) => {
     return dispatch => {
         console.log('客户端向服务器发送消息', { from, to, content })
         io.socket.emit('sendMsg', { from, to, content })
+    }
+}
+
+// 读取消息的异步action
+export const readMsg = (from, to) => {
+    return async dispatch => {
+        const response = await reqReadMsg(from)
+        const result = response.data
+        if (result.code === 0) {
+            const count = result.data
+            dispatch(msgRead({count, from ,to}))
+        }
     }
 }
